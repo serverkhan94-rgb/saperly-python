@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import time
 import urllib.parse
 from typing import Any, Dict, Optional
 
@@ -33,6 +35,9 @@ def _raise_for_error(status: int, body: object) -> None:
     raise SaperlyError.from_response(status, body)
 
 
+_RETRYABLE_METHODS = frozenset({"GET", "DELETE", "HEAD", "OPTIONS"})
+
+
 class SaperlyClient:
     """Synchronous HTTP client for the Saperly API."""
 
@@ -60,26 +65,47 @@ class SaperlyClient:
         url = _build_url(self._base_url, path, query)
         headers = _build_headers(self._api_key)
 
-        resp = self._session.request(
-            method,
-            url,
-            headers=headers,
-            json=body,
-            timeout=self._timeout,
-        )
+        is_retryable = method.upper() in _RETRYABLE_METHODS
+        max_attempts = 2 if is_retryable else 1
+        last_error: Optional[Exception] = None
 
-        if resp.status_code >= 400:
+        for attempt in range(1, max_attempts + 1):
             try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            _raise_for_error(resp.status_code, error_body)
+                resp = self._session.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=body,
+                    timeout=self._timeout,
+                )
 
-        if resp.status_code == 204:
-            return None
+                if resp.status_code >= 500 and is_retryable and attempt < max_attempts:
+                    time.sleep(1)
+                    continue
 
-        data = resp.json()
-        return to_snake_keys(data)
+                if resp.status_code >= 400:
+                    try:
+                        error_body = resp.json()
+                    except ValueError:
+                        error_body = None
+                    _raise_for_error(resp.status_code, error_body)
+
+                if resp.status_code == 204:
+                    return None
+
+                data = resp.json()
+                return to_snake_keys(data)
+            except SaperlyError:
+                raise
+            except (requests.ConnectionError, requests.Timeout) as exc:
+                last_error = exc
+                if is_retryable and attempt < max_attempts:
+                    time.sleep(1)
+                    continue
+                raise
+
+        if last_error:
+            raise last_error
 
     def close(self) -> None:
         self._session.close()
@@ -122,28 +148,51 @@ class AsyncSaperlyClient:
         body: Optional[Dict[str, Any]] = None,
         query: Optional[Dict[str, Any]] = None,
     ) -> Any:
+        import httpx
+
         url = _build_url(self._base_url, path, query)
         headers = _build_headers(self._api_key)
 
-        resp = await self._client.request(
-            method,
-            url,
-            headers=headers,
-            json=body,
-        )
+        is_retryable = method.upper() in _RETRYABLE_METHODS
+        max_attempts = 2 if is_retryable else 1
+        last_error: Optional[Exception] = None
 
-        if resp.status_code >= 400:
+        for attempt in range(1, max_attempts + 1):
             try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            _raise_for_error(resp.status_code, error_body)
+                resp = await self._client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    json=body,
+                )
 
-        if resp.status_code == 204:
-            return None
+                if resp.status_code >= 500 and is_retryable and attempt < max_attempts:
+                    await asyncio.sleep(1)
+                    continue
 
-        data = resp.json()
-        return to_snake_keys(data)
+                if resp.status_code >= 400:
+                    try:
+                        error_body = resp.json()
+                    except ValueError:
+                        error_body = None
+                    _raise_for_error(resp.status_code, error_body)
+
+                if resp.status_code == 204:
+                    return None
+
+                data = resp.json()
+                return to_snake_keys(data)
+            except SaperlyError:
+                raise
+            except (httpx.ConnectError, httpx.TimeoutException) as exc:
+                last_error = exc
+                if is_retryable and attempt < max_attempts:
+                    await asyncio.sleep(1)
+                    continue
+                raise
+
+        if last_error:
+            raise last_error
 
     async def aclose(self) -> None:
         await self._client.aclose()

@@ -65,6 +65,10 @@ async with AsyncSaperlyClient(api_key="sk_live_...") as client:
 | `client.billing` | `balance` |
 | `client.webhooks` | `deliveries`, `stats`, `test` |
 
+## Automatic Retries
+
+GET and DELETE requests automatically retry once on 5xx errors and network failures, with a 1-second delay. POST/PUT/PATCH requests are never retried to prevent duplicate side effects.
+
 ## SMS
 
 SMS is inbound only for MVP. Your line receives incoming text messages and your
