@@ -25,6 +25,7 @@ from ._errors import (
 )
 from ._transforms import to_snake_keys
 from ._types import (
+    AddFundsResult,
     AuditResult,
     Balance,
     Call,
@@ -36,6 +37,8 @@ from ._types import (
     Disclosure,
     Line,
     SmsMessage,
+    Transaction,
+    TransactionListResult,
     WebhookDelivery,
     WebhookStats,
     WebhookTestResult,
@@ -185,6 +188,9 @@ __all__ = [
     "CallListResult",
     "AuditResult",
     "DeliveryListResult",
+    "Transaction",
+    "TransactionListResult",
+    "AddFundsResult",
     # Errors
     "SaperlyError",
     "ErrorDetail",

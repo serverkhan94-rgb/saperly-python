@@ -121,6 +121,48 @@ class Balance:
 
 
 @dataclass(frozen=True)
+class Transaction:
+    id: Optional[str] = None
+    type: Optional[str] = None
+    amount_cents: Optional[int] = None
+    balance_after_cents: Optional[int] = None
+    description: Optional[str] = None
+    reference_id: Optional[str] = None
+    reference_type: Optional[str] = None
+    created_at: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> Transaction:
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class TransactionListResult:
+    transactions: Optional[List[Transaction]] = None
+    has_more: Optional[bool] = None
+    next_cursor: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> TransactionListResult:
+        raw = data.get("transactions", [])
+        transactions = [Transaction.from_dict(t) for t in raw] if isinstance(raw, list) else []
+        return cls(
+            transactions=transactions,
+            has_more=data.get("has_more"),
+            next_cursor=data.get("next_cursor"),
+        )
+
+
+@dataclass(frozen=True)
+class AddFundsResult:
+    checkout_url: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> AddFundsResult:
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
 class SmsMessage:
     id: Optional[str] = None
     from_number: Optional[str] = None
