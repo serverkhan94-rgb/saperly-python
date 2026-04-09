@@ -33,12 +33,24 @@ from ._types import (
     ComplianceEvent,
     ConsentCheckResult,
     ConsentRecord,
+    Conversation,
+    ConversationListResult,
+    ConversationMessage,
+    ConversationMessagesResult,
+    DailyUsage,
+    DailyUsageResult,
     DeliveryListResult,
     Disclosure,
     Line,
+    Message,
+    MonthlyUsage,
+    MonthlyUsageResult,
+    Settings,
     SmsMessage,
     Transaction,
     TransactionListResult,
+    Voice,
+    VoiceListResult,
     WebhookDelivery,
     WebhookStats,
     WebhookTestResult,
@@ -48,8 +60,13 @@ from .resources.billing import AsyncBillingResource, BillingResource
 from .resources.calls import AsyncCallsResource, CallsResource
 from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.consent import AsyncConsentResource, ConsentResource
+from .resources.conversations import AsyncConversationsResource, ConversationsResource
 from .resources.disclosures import AsyncDisclosuresResource, DisclosuresResource
 from .resources.lines import AsyncLinesResource, LinesResource
+from .resources.messages import AsyncMessagesResource, MessagesResource
+from .resources.settings import AsyncSettingsResource, SettingsResource
+from .resources.usage import AsyncUsageResource, UsageResource
+from .resources.voices import AsyncVoicesResource, VoicesResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
 
 
@@ -70,6 +87,11 @@ class SaperlyClient:
         self.disclosures = DisclosuresResource(self._http)
         self.billing = BillingResource(self._http)
         self.webhooks = WebhooksResource(self._http)
+        self.messages = MessagesResource(self._http)
+        self.conversations = ConversationsResource(self._http)
+        self.usage = UsageResource(self._http)
+        self.settings = SettingsResource(self._http)
+        self.voices = VoicesResource(self._http)
 
     @staticmethod
     def register(
@@ -126,6 +148,11 @@ class AsyncSaperlyClient:
         self.disclosures = AsyncDisclosuresResource(self._http)
         self.billing = AsyncBillingResource(self._http)
         self.webhooks = AsyncWebhooksResource(self._http)
+        self.messages = AsyncMessagesResource(self._http)
+        self.conversations = AsyncConversationsResource(self._http)
+        self.usage = AsyncUsageResource(self._http)
+        self.settings = AsyncSettingsResource(self._http)
+        self.voices = AsyncVoicesResource(self._http)
 
     @staticmethod
     async def register(
@@ -191,6 +218,18 @@ __all__ = [
     "Transaction",
     "TransactionListResult",
     "AddFundsResult",
+    "Message",
+    "Conversation",
+    "ConversationListResult",
+    "ConversationMessage",
+    "ConversationMessagesResult",
+    "DailyUsage",
+    "DailyUsageResult",
+    "MonthlyUsage",
+    "MonthlyUsageResult",
+    "Settings",
+    "Voice",
+    "VoiceListResult",
     # Errors
     "SaperlyError",
     "ErrorDetail",

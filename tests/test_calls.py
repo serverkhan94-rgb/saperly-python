@@ -50,3 +50,26 @@ class TestCalls:
 
         assert isinstance(call, Call)
         assert call.status == "completed"
+
+    def test_conversation(self, mock_api, client):
+        conv_call = {**SAMPLE_CALL, "status": "initiated"}
+        mock_api.add(
+            responses.POST,
+            f"{BASE_URL}/api/v1/calls/conversation",
+            json={"call": conv_call},
+            status=201,
+        )
+        call = client.calls.conversation(
+            line_id="line-1",
+            to_number="+14155559999",
+            topic="Schedule appointment",
+        )
+
+        assert isinstance(call, Call)
+        assert call.id == "call-1"
+        assert call.status == "initiated"
+
+        body = mock_api.calls[0].request.body
+        assert b'"topic"' in body
+        assert b'"line_id"' in body
+        assert b'"to_number"' in body

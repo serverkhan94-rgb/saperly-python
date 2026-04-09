@@ -16,6 +16,12 @@ class LinesResource(BaseResource):
         webhook_url: Optional[str] = None,
         audio_handler_url: Optional[str] = None,
         status_callback_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        begin_message: Optional[str] = None,
+        voice: Optional[str] = None,
+        context_limit: Optional[int] = None,
+        recording_enabled: Optional[bool] = None,
+        compliance_enabled: Optional[bool] = None,
     ) -> Line:
         body: Dict[str, Any] = {"name": name, "mode": mode}
         if webhook_url is not None:
@@ -24,7 +30,25 @@ class LinesResource(BaseResource):
             body["audio_handler_url"] = audio_handler_url
         if status_callback_url is not None:
             body["status_callback_url"] = status_callback_url
+        if system_prompt is not None:
+            body["system_prompt"] = system_prompt
+        if begin_message is not None:
+            body["begin_message"] = begin_message
+        if voice is not None:
+            body["voice"] = voice
+        if context_limit is not None:
+            body["context_limit"] = context_limit
+        if recording_enabled is not None:
+            body["recording_enabled"] = recording_enabled
+        if compliance_enabled is not None:
+            body["compliance_enabled"] = compliance_enabled
         data = self._client.request("POST", "/lines", body=body)
+        return Line.from_dict(data["line"])
+
+    def update(self, line_id: str, **kwargs: Any) -> Line:
+        encoded = urllib.parse.quote(line_id, safe="")
+        body = {k: v for k, v in kwargs.items() if v is not None}
+        data = self._client.request("PATCH", f"/lines/{encoded}", body=body)
         return Line.from_dict(data["line"])
 
     def list(self) -> List[Line]:
@@ -57,6 +81,12 @@ class AsyncLinesResource(AsyncBaseResource):
         webhook_url: Optional[str] = None,
         audio_handler_url: Optional[str] = None,
         status_callback_url: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        begin_message: Optional[str] = None,
+        voice: Optional[str] = None,
+        context_limit: Optional[int] = None,
+        recording_enabled: Optional[bool] = None,
+        compliance_enabled: Optional[bool] = None,
     ) -> Line:
         body: Dict[str, Any] = {"name": name, "mode": mode}
         if webhook_url is not None:
@@ -65,7 +95,25 @@ class AsyncLinesResource(AsyncBaseResource):
             body["audio_handler_url"] = audio_handler_url
         if status_callback_url is not None:
             body["status_callback_url"] = status_callback_url
+        if system_prompt is not None:
+            body["system_prompt"] = system_prompt
+        if begin_message is not None:
+            body["begin_message"] = begin_message
+        if voice is not None:
+            body["voice"] = voice
+        if context_limit is not None:
+            body["context_limit"] = context_limit
+        if recording_enabled is not None:
+            body["recording_enabled"] = recording_enabled
+        if compliance_enabled is not None:
+            body["compliance_enabled"] = compliance_enabled
         data = await self._client.request("POST", "/lines", body=body)
+        return Line.from_dict(data["line"])
+
+    async def update(self, line_id: str, **kwargs: Any) -> Line:
+        encoded = urllib.parse.quote(line_id, safe="")
+        body = {k: v for k, v in kwargs.items() if v is not None}
+        data = await self._client.request("PATCH", f"/lines/{encoded}", body=body)
         return Line.from_dict(data["line"])
 
     async def list(self) -> List[Line]:

@@ -40,6 +40,27 @@ class CallsResource(BaseResource):
         data = self._client.request("POST", f"/calls/{encoded}/hangup")
         return Call.from_dict(data["call"])
 
+    def conversation(
+        self,
+        *,
+        line_id: str,
+        to_number: str,
+        topic: str,
+        begin_message: Optional[str] = None,
+        max_duration_seconds: Optional[int] = None,
+    ) -> Call:
+        body: Dict[str, Any] = {
+            "line_id": line_id,
+            "to_number": to_number,
+            "topic": topic,
+        }
+        if begin_message is not None:
+            body["begin_message"] = begin_message
+        if max_duration_seconds is not None:
+            body["max_duration_seconds"] = max_duration_seconds
+        data = self._client.request("POST", "/calls/conversation", body=body)
+        return Call.from_dict(data["call"])
+
 
 class AsyncCallsResource(AsyncBaseResource):
     async def create(self, *, line_id: str, to_number: str) -> Call:
@@ -72,4 +93,25 @@ class AsyncCallsResource(AsyncBaseResource):
     async def hangup(self, call_id: str) -> Call:
         encoded = urllib.parse.quote(call_id, safe="")
         data = await self._client.request("POST", f"/calls/{encoded}/hangup")
+        return Call.from_dict(data["call"])
+
+    async def conversation(
+        self,
+        *,
+        line_id: str,
+        to_number: str,
+        topic: str,
+        begin_message: Optional[str] = None,
+        max_duration_seconds: Optional[int] = None,
+    ) -> Call:
+        body: Dict[str, Any] = {
+            "line_id": line_id,
+            "to_number": to_number,
+            "topic": topic,
+        }
+        if begin_message is not None:
+            body["begin_message"] = begin_message
+        if max_duration_seconds is not None:
+            body["max_duration_seconds"] = max_duration_seconds
+        data = await self._client.request("POST", "/calls/conversation", body=body)
         return Call.from_dict(data["call"])

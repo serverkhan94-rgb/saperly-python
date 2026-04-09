@@ -29,6 +29,12 @@ class Line:
     status: Optional[str] = None
     environment: Optional[str] = None
     created_at: Optional[str] = None
+    system_prompt: Optional[str] = None
+    begin_message: Optional[str] = None
+    voice: Optional[str] = None
+    context_limit: Optional[int] = None
+    recording_enabled: Optional[bool] = None
+    compliance_enabled: Optional[bool] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Line:
@@ -47,6 +53,10 @@ class Call:
     started_at: Optional[str] = None
     ended_at: Optional[str] = None
     created_at: Optional[str] = None
+    recording_url: Optional[str] = None
+    transcript: Optional[List[Dict[str, Any]]] = None
+    system_prompt: Optional[str] = None
+    begin_message: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Call:
@@ -174,6 +184,158 @@ class SmsMessage:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SmsMessage:
         return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class Message:
+    id: Optional[str] = None
+    line_id: Optional[str] = None
+    to: Optional[str] = None
+    text: Optional[str] = None
+    status: Optional[str] = None
+    created_at: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Message":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class Conversation:
+    line_id: Optional[str] = None
+    phone_number: Optional[str] = None
+    line_phone_number: Optional[str] = None
+    message_count: Optional[int] = None
+    last_message_at: Optional[str] = None
+    last_message_text: Optional[str] = None
+    last_message_direction: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Conversation":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class ConversationListResult:
+    conversations: Optional[List[Conversation]] = None
+    has_more: Optional[bool] = None
+    next_cursor: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationListResult":
+        convos = [Conversation.from_dict(c) for c in data.get("conversations", [])]
+        return cls(
+            conversations=convos,
+            has_more=data.get("has_more"),
+            next_cursor=data.get("next_cursor"),
+        )
+
+
+@dataclass(frozen=True)
+class ConversationMessage:
+    direction: Optional[str] = None
+    text: Optional[str] = None
+    timestamp: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationMessage":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class ConversationMessagesResult:
+    messages: Optional[List[ConversationMessage]] = None
+    has_more: Optional[bool] = None
+    next_cursor: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationMessagesResult":
+        msgs = [ConversationMessage.from_dict(m) for m in data.get("messages", [])]
+        return cls(
+            messages=msgs,
+            has_more=data.get("has_more"),
+            next_cursor=data.get("next_cursor"),
+        )
+
+
+@dataclass(frozen=True)
+class DailyUsage:
+    date: Optional[str] = None
+    calls: Optional[int] = None
+    minutes: Optional[int] = None
+    sms_inbound: Optional[int] = None
+    sms_outbound: Optional[int] = None
+    cost_cents: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DailyUsage":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class DailyUsageResult:
+    daily: Optional[List[DailyUsage]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DailyUsageResult":
+        items = [DailyUsage.from_dict(d) for d in data.get("daily", [])]
+        return cls(daily=items)
+
+
+@dataclass(frozen=True)
+class MonthlyUsage:
+    month: Optional[str] = None
+    calls: Optional[int] = None
+    minutes: Optional[int] = None
+    sms_inbound: Optional[int] = None
+    sms_outbound: Optional[int] = None
+    cost_cents: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MonthlyUsage":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class MonthlyUsageResult:
+    monthly: Optional[List[MonthlyUsage]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MonthlyUsageResult":
+        items = [MonthlyUsage.from_dict(m) for m in data.get("monthly", [])]
+        return cls(monthly=items)
+
+
+@dataclass(frozen=True)
+class Settings:
+    default_webhook_url: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Settings":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class Voice:
+    id: Optional[str] = None
+    name: Optional[str] = None
+    gender: Optional[str] = None
+    accent: Optional[str] = None
+    style: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Voice":
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class VoiceListResult:
+    voices: Optional[List[Voice]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VoiceListResult":
+        items = [Voice.from_dict(v) for v in data.get("voices", [])]
+        return cls(voices=items)
 
 
 # ---------------------------------------------------------------------------
