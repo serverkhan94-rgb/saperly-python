@@ -122,7 +122,7 @@ class Disclosure:
 
 @dataclass(frozen=True)
 class Balance:
-    balance_cents: Optional[int] = None
+    credits: Optional[int] = None
     currency: Optional[str] = None
 
     @classmethod
@@ -134,8 +134,8 @@ class Balance:
 class Transaction:
     id: Optional[str] = None
     type: Optional[str] = None
-    amount_cents: Optional[int] = None
-    balance_after_cents: Optional[int] = None
+    amount_credits: Optional[int] = None
+    balance_after_credits: Optional[int] = None
     description: Optional[str] = None
     reference_id: Optional[str] = None
     reference_type: Optional[str] = None
@@ -265,7 +265,7 @@ class DailyUsage:
     minutes: Optional[int] = None
     sms_inbound: Optional[int] = None
     sms_outbound: Optional[int] = None
-    cost_cents: Optional[int] = None
+    cost_credits: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DailyUsage":
@@ -289,7 +289,7 @@ class MonthlyUsage:
     minutes: Optional[int] = None
     sms_inbound: Optional[int] = None
     sms_outbound: Optional[int] = None
-    cost_cents: Optional[int] = None
+    cost_credits: Optional[int] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "MonthlyUsage":

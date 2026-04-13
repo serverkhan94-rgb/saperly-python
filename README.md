@@ -1,5 +1,7 @@
 # saperly
 
+> **Published at [github.com/Saperly/saperly-python](https://github.com/Saperly/saperly-python).** This copy in the monorepo is the development source.
+
 Python SDK for [Saperly](https://saperly.com) — the phone carrier for AI agents.
 
 ## Install

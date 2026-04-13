@@ -11,8 +11,8 @@ class BillingResource(BaseResource):
         data = self._client.request("GET", "/billing/balance")
         return Balance.from_dict(data)
 
-    def add_funds(self, *, amount_cents: int) -> AddFundsResult:
-        body = {"amount_cents": amount_cents}
+    def add_funds(self, *, amount_credits: int) -> AddFundsResult:
+        body = {"amount_credits": amount_credits}
         data = self._client.request("POST", "/billing/add-funds", body=body)
         return AddFundsResult.from_dict(data)
 
@@ -36,8 +36,8 @@ class AsyncBillingResource(AsyncBaseResource):
         data = await self._client.request("GET", "/billing/balance")
         return Balance.from_dict(data)
 
-    async def add_funds(self, *, amount_cents: int) -> AddFundsResult:
-        body = {"amount_cents": amount_cents}
+    async def add_funds(self, *, amount_credits: int) -> AddFundsResult:
+        body = {"amount_credits": amount_credits}
         data = await self._client.request("POST", "/billing/add-funds", body=body)
         return AddFundsResult.from_dict(data)
 

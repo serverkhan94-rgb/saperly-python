@@ -121,7 +121,7 @@ SAMPLE_DAILY_USAGE = {
     "minutes": 45,
     "sms_inbound": 3,
     "sms_outbound": 2,
-    "cost_cents": 495,
+    "cost_credits": 495,
 }
 
 SAMPLE_MONTHLY_USAGE = {
@@ -130,7 +130,7 @@ SAMPLE_MONTHLY_USAGE = {
     "minutes": 450,
     "sms_inbound": 30,
     "sms_outbound": 20,
-    "cost_cents": 4950,
+    "cost_credits": 4950,
 }
 
 SAMPLE_SETTINGS = {

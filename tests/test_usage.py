@@ -22,7 +22,7 @@ class TestUsage:
         assert result.daily[0].calls == 10
         assert result.daily[0].minutes == 45
         assert result.daily[0].sms_inbound == 3
-        assert result.daily[0].cost_cents == 495
+        assert result.daily[0].cost_credits == 495
 
     def test_daily_passes_days_param(self, mock_api, client):
         mock_api.add(
@@ -50,7 +50,7 @@ class TestUsage:
         assert result.monthly[0].month == "2026-01"
         assert result.monthly[0].calls == 100
         assert result.monthly[0].minutes == 450
-        assert result.monthly[0].cost_cents == 4950
+        assert result.monthly[0].cost_credits == 4950
 
     def test_monthly_passes_months_param(self, mock_api, client):
         mock_api.add(

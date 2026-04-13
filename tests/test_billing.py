@@ -11,14 +11,14 @@ class TestBilling:
         mock_api.add(
             responses.GET,
             f"{BASE_URL}/api/v1/billing/balance",
-            json={"balance_cents": 500, "currency": "usd"},
+            json={"credits": 500, "currency": "credits"},
             status=200,
         )
         balance = client.billing.balance()
 
         assert isinstance(balance, Balance)
-        assert balance.balance_cents == 500
-        assert balance.currency == "usd"
+        assert balance.credits == 500
+        assert balance.currency == "credits"
 
     def test_add_funds(self, mock_api, client):
         mock_api.add(
@@ -27,7 +27,7 @@ class TestBilling:
             json={"checkout_url": "https://checkout.lemonsqueezy.com/pay/abc123"},
             status=201,
         )
-        result = client.billing.add_funds(amount_cents=2500)
+        result = client.billing.add_funds(amount_credits=2500)
 
         assert isinstance(result, AddFundsResult)
         assert result.checkout_url == "https://checkout.lemonsqueezy.com/pay/abc123"
@@ -41,8 +41,8 @@ class TestBilling:
                     {
                         "id": "txn-1",
                         "type": "signup_credit",
-                        "amount_cents": 500,
-                        "balance_after_cents": 500,
+                        "amount_credits": 500,
+                        "balance_after_credits": 500,
                         "description": "Signup credit",
                         "reference_id": None,
                         "reference_type": None,
@@ -58,7 +58,7 @@ class TestBilling:
 
         assert isinstance(result, TransactionListResult)
         assert len(result.transactions) == 1
-        assert result.transactions[0].amount_cents == 500
+        assert result.transactions[0].amount_credits == 500
         assert result.transactions[0].type == "signup_credit"
         assert result.has_more is True
         assert result.next_cursor == "2026-01-01T00:00:00Z"
