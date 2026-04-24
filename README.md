@@ -76,6 +76,34 @@ GET and DELETE requests automatically retry once on 5xx errors and network failu
 SMS is inbound only for MVP. Your line receives incoming text messages and your
 webhook gets `sms_received` events. Outbound SMS coming soon.
 
+## Verifying webhooks
+
+Every Saperly webhook is signed. `verify_webhook(raw_body, secret, headers)` returns an object with `.valid` and `.reason`.
+
+```python
+from flask import Flask, request, jsonify
+from saperly.webhooks_verify import verify_webhook
+
+app = Flask(__name__)
+
+@app.route("/saperly-webhook", methods=["POST"])
+def webhook():
+    raw_body = request.get_data(as_text=True)
+    line_id = request.get_json(force=True)["line_id"]
+    secret = lookup_secret_for_line(line_id)  # your secret store
+    result = verify_webhook(raw_body, secret, dict(request.headers))
+    if not result.valid:
+        return jsonify({"error": result.reason}), 401
+
+    event = request.get_json(force=True)
+    # ... trusted, handle the event
+    return "", 200
+```
+
+The helper enforces the 5-minute clock-skew window and uses `hmac.compare_digest` for constant-time compare. You still need to cache `x-saperly-delivery-id` for 5 minutes and reject duplicates yourself — that cache is receiver-side state.
+
+Migrating from an earlier version? See [v0.3.0.0 migration guide](https://saperly.com/docs/migrations/v0.3.0.0).
+
 ## Docs
 
 Full documentation: https://saperly.com/docs
