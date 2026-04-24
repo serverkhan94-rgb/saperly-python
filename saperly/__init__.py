@@ -68,6 +68,7 @@ from .resources.settings import AsyncSettingsResource, SettingsResource
 from .resources.usage import AsyncUsageResource, UsageResource
 from .resources.voices import AsyncVoicesResource, VoicesResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
+from .webhooks_verify import VerifyResult, verify_webhook
 
 
 class SaperlyClient:
@@ -245,4 +246,7 @@ __all__ = [
     "NumberOptedOutError",
     "EmailTakenError",
     "RateLimitedError",
+    # Webhook verification
+    "verify_webhook",
+    "VerifyResult",
 ]
