@@ -24,13 +24,13 @@ class TestBilling:
         mock_api.add(
             responses.POST,
             f"{BASE_URL}/api/v1/billing/add-funds",
-            json={"checkout_url": "https://checkout.lemonsqueezy.com/pay/abc123"},
+            json={"checkout_url": "https://checkout.stripe.com/pay/abc123"},
             status=201,
         )
         result = client.billing.add_funds(amount_credits=2500)
 
         assert isinstance(result, AddFundsResult)
-        assert result.checkout_url == "https://checkout.lemonsqueezy.com/pay/abc123"
+        assert result.checkout_url == "https://checkout.stripe.com/pay/abc123"
 
     def test_transactions(self, mock_api, client):
         mock_api.add(
