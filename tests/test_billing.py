@@ -1,36 +1,37 @@
 from __future__ import annotations
 
+import pytest
 import responses
 
-from saperly import AddFundsResult, Balance, TransactionListResult
+from saperly import Balance, TransactionListResult
 from tests.conftest import BASE_URL
 
 
 class TestBilling:
     def test_balance(self, mock_api, client):
+        # v0.5.3 cents-honest: server returns currency="USD" and `credits`
+        # carries cents (500 = $5.00). The legacy "credits" currency string
+        # is still accepted by the type for backward-compat with v0.5.1.x
+        # snapshots, but new servers always emit "USD".
         mock_api.add(
             responses.GET,
             f"{BASE_URL}/api/v1/billing/balance",
-            json={"credits": 500, "currency": "credits"},
+            json={"credits": 500, "currency": "USD"},
             status=200,
         )
         balance = client.billing.balance()
 
         assert isinstance(balance, Balance)
         assert balance.credits == 500
-        assert balance.currency == "credits"
+        assert balance.currency == "USD"
 
-    def test_add_funds(self, mock_api, client):
-        mock_api.add(
-            responses.POST,
-            f"{BASE_URL}/api/v1/billing/add-funds",
-            json={"checkout_url": "https://checkout.stripe.com/pay/abc123"},
-            status=201,
-        )
-        result = client.billing.add_funds(amount_credits=2500)
-
-        assert isinstance(result, AddFundsResult)
-        assert result.checkout_url == "https://checkout.stripe.com/pay/abc123"
+    def test_add_funds_raises(self, client):
+        # add_funds was removed in v0.5.2.0 (postpaid pivot). The Python SDK
+        # raises synchronously with a migration breadcrumb instead of hitting
+        # the deleted /billing/add-funds endpoint and surfacing an opaque 404.
+        # Mirrors the TS SDK throw at packages/sdk/src/resources/billing.ts.
+        with pytest.raises(RuntimeError, match="postpaid"):
+            client.billing.add_funds(amount_credits=2500)
 
     def test_transactions(self, mock_api, client):
         mock_api.add(

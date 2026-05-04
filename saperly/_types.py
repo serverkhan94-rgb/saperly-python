@@ -122,7 +122,23 @@ class Disclosure:
 
 @dataclass(frozen=True)
 class Balance:
+    """
+    Account balance.
+
+    v0.5.3 cents-honest pivot: the ``credits`` field carries US cents (e.g.
+    ``500`` = $5.00). The historical name is preserved for backward-compat
+    with v0.5.1.x clients; rename to ``cents`` is deferred to v0.6.x.
+
+    The ``cents`` field is added here as the v1.0-stable name. On servers
+    >= v0.5.3 it is populated and equals ``credits``; on older servers it
+    is ``None`` and callers should fall back to ``credits``.
+
+    The ``currency`` field returns ``"USD"`` on servers >= v0.5.3 and the
+    legacy ``"credits"`` literal on older servers.
+    """
+
     credits: Optional[int] = None
+    cents: Optional[int] = None
     currency: Optional[str] = None
 
     @classmethod
@@ -132,6 +148,15 @@ class Balance:
 
 @dataclass(frozen=True)
 class Transaction:
+    """
+    Billing transaction record.
+
+    v0.5.3 cents-honest pivot: ``amount_credits`` and ``balance_after_credits``
+    carry US cents, not credit units. The historical names are preserved for
+    backward-compat with v0.5.1.x clients; rename to ``*_cents`` is deferred
+    to v0.6.x. To display as dollars: ``f"${amount_credits / 100:.2f}"``.
+    """
+
     id: Optional[str] = None
     type: Optional[str] = None
     amount_credits: Optional[int] = None
