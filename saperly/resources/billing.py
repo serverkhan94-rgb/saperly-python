@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 from .._types import AddFundsResult, Balance, TransactionListResult
 from ._base import AsyncBaseResource, BaseResource
 
-
 _ADD_FUNDS_DEPRECATION_MSG = (
     "client.billing.add_funds() was removed in v0.5.2.0. Saperly is now "
     "postpaid — your saved card on file is auto-charged when balance runs "
