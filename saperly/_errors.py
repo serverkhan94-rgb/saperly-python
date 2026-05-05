@@ -60,6 +60,7 @@ class SaperlyError(Exception):
             "call_in_progress": lambda: CallInProgressError(message, status),
             "call_not_active": lambda: CallNotActiveError(message, status),
             "insufficient_credits": lambda: InsufficientCreditsError(message, status),
+            "payment_method_required": lambda: PaymentMethodRequiredError(message, status),
             "number_opted_out": lambda: NumberOptedOutError(message, status),
             "email_taken": lambda: EmailTakenError(message, status),
             "rate_limited": lambda: RateLimitedError(message, status),
@@ -119,6 +120,21 @@ class CallNotActiveError(SaperlyError):
 class InsufficientCreditsError(SaperlyError):
     def __init__(self, message: str, status: int = 402) -> None:
         super().__init__("insufficient_credits", status, message)
+
+
+class PaymentMethodRequiredError(SaperlyError):
+    """Raised when POST /v1/lines requires a payment method on file.
+
+    Triggered when ``users.firstLineProvisionedAt`` is non-null AND
+    ``billing_accounts.has_default_pm`` is false. The first-ever line is
+    frictionless; line #2+ in live env requires a card. Add a payment method
+    in the Saperly portal at https://saperly.com/billing#payment-method, then
+    retry with a NEW Idempotency-Key (the original 402 is sticky-cached for
+    ~12h).
+    """
+
+    def __init__(self, message: str, status: int = 402) -> None:
+        super().__init__("payment_method_required", status, message)
 
 
 class NumberOptedOutError(SaperlyError):
