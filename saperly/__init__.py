@@ -8,6 +8,9 @@ from ._client import DEFAULT_BASE_URL
 from ._client import AsyncSaperlyClient as _AsyncHttpClient
 from ._client import SaperlyClient as _SyncHttpClient
 from ._errors import (
+    AgentCapExceededError,
+    AgentPermissionDeniedError,
+    AgentScopeError,
     AuthenticationError,
     CallInProgressError,
     CallNotActiveError,
@@ -17,6 +20,7 @@ from ._errors import (
     ErrorDetail,
     ForbiddenError,
     InsufficientCreditsError,
+    M3FraudBlockError,
     NotFoundError,
     NumberOptedOutError,
     PaymentMethodRequiredError,
@@ -50,6 +54,8 @@ from ._types import (
     SmsMessage,
     Transaction,
     TransactionListResult,
+    UnifiedAuditEvent,
+    UnifiedAuditResult,
     Voice,
     VoiceListResult,
     WebhookDelivery,
@@ -57,6 +63,7 @@ from ._types import (
     WebhookTestResult,
 )
 from ._version import __version__
+from .resources.audit import AsyncAuditResource, AuditResource
 from .resources.billing import AsyncBillingResource, BillingResource
 from .resources.calls import AsyncCallsResource, CallsResource
 from .resources.compliance import AsyncComplianceResource, ComplianceResource
@@ -86,6 +93,7 @@ class SaperlyClient:
         self.calls = CallsResource(self._http)
         self.consent = ConsentResource(self._http)
         self.compliance = ComplianceResource(self._http)
+        self.audit = AuditResource(self._http)
         self.disclosures = DisclosuresResource(self._http)
         self.billing = BillingResource(self._http)
         self.webhooks = WebhooksResource(self._http)
@@ -147,6 +155,7 @@ class AsyncSaperlyClient:
         self.calls = AsyncCallsResource(self._http)
         self.consent = AsyncConsentResource(self._http)
         self.compliance = AsyncComplianceResource(self._http)
+        self.audit = AsyncAuditResource(self._http)
         self.disclosures = AsyncDisclosuresResource(self._http)
         self.billing = AsyncBillingResource(self._http)
         self.webhooks = AsyncWebhooksResource(self._http)
@@ -216,6 +225,10 @@ __all__ = [
     "WebhookTestResult",
     "CallListResult",
     "AuditResult",
+    "UnifiedAuditEvent",
+    "UnifiedAuditResult",
+    "AuditResource",
+    "AsyncAuditResource",
     "DeliveryListResult",
     "Transaction",
     "TransactionListResult",
@@ -248,6 +261,10 @@ __all__ = [
     "NumberOptedOutError",
     "EmailTakenError",
     "RateLimitedError",
+    "AgentScopeError",
+    "AgentCapExceededError",
+    "AgentPermissionDeniedError",
+    "M3FraudBlockError",
     # Webhook verification
     "verify_webhook",
     "VerifyResult",

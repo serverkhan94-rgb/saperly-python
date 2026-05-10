@@ -64,6 +64,12 @@ class SaperlyError(Exception):
             "number_opted_out": lambda: NumberOptedOutError(message, status),
             "email_taken": lambda: EmailTakenError(message, status),
             "rate_limited": lambda: RateLimitedError(message, status),
+            "agent_scope_error": lambda: AgentScopeError(message, status, details),
+            "agent_cap_exceeded": lambda: AgentCapExceededError(message, status, details),
+            "agent_permission_denied": lambda: AgentPermissionDeniedError(
+                message, status, details
+            ),
+            "m3_fraud_block": lambda: M3FraudBlockError(message, status),
         }
 
         factory = _MAP.get(code)
@@ -150,3 +156,63 @@ class EmailTakenError(SaperlyError):
 class RateLimitedError(SaperlyError):
     def __init__(self, message: str, status: int = 429) -> None:
         super().__init__("rate_limited", status, message)
+
+
+class AgentScopeError(SaperlyError):
+    """v0.5.6.0 (M1 PR1) — line-scoped key tried to act on a different line.
+
+    Server emits structured detail: ``line_id`` (the requested line).
+    403 status (not 404) — the line may exist; the key just isn't authorized.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        status: int = 403,
+        details: Optional[List[ErrorDetail]] = None,
+    ) -> None:
+        super().__init__("agent_scope_error", status, message, details)
+
+
+class AgentCapExceededError(SaperlyError):
+    """v0.5.6.0 (M1 PR1) — agent monthly_cap_cents reached.
+
+    Server emits structured details: ``spent_cents``, ``cap_cents``,
+    ``cycle_reset_at``. 402 status — same family as InsufficientCreditsError;
+    catch both to render a unified "fund or raise cap" message.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        status: int = 402,
+        details: Optional[List[ErrorDetail]] = None,
+    ) -> None:
+        super().__init__("agent_cap_exceeded", status, message, details)
+
+
+class AgentPermissionDeniedError(SaperlyError):
+    """v0.5.6.0 (M1 PR1) — permission tier denied for verb.
+
+    Server emits structured detail: ``permissions = "tier=X verb=Y"``.
+    403 (not 401) — auth succeeded; tier just lacks the verb.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        status: int = 403,
+        details: Optional[List[ErrorDetail]] = None,
+    ) -> None:
+        super().__init__("agent_permission_denied", status, message, details)
+
+
+class M3FraudBlockError(SaperlyError):
+    """v0.5.6.0 (M3 PR2) — request matched an IRSF-reconnaissance pattern.
+
+    Customer-facing copy is intentionally vague AND server emits no details
+    (per fraud-heuristic.ts comment) — do not treat empty details as a bug.
+    """
+
+    def __init__(self, message: str, status: int = 403) -> None:
+        super().__init__("m3_fraud_block", status, message)

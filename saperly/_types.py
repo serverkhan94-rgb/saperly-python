@@ -446,6 +446,53 @@ class AuditResult:
 
 
 @dataclass(frozen=True)
+class UnifiedAuditEvent:
+    """Single event from /v1/audit unified feed.
+
+    `type` discriminates the source table; `data` is a heterogeneous payload
+    whose snake_case shape depends on `type`. v1 keeps the data field as a
+    plain dict — narrow via the type field at the call site.
+    """
+
+    type: Optional[str] = None
+    id: Optional[str] = None
+    created_at: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> UnifiedAuditEvent:
+        return cls(
+            type=data.get("type"),
+            id=data.get("id"),
+            created_at=data.get("created_at"),
+            data=data.get("data"),
+        )
+
+
+@dataclass(frozen=True)
+class UnifiedAuditResult:
+    """Result of /v1/audit unified-feed list call."""
+
+    events: Optional[List[UnifiedAuditEvent]] = None
+    limit: Optional[int] = None
+    api_key_id: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> UnifiedAuditResult:
+        raw_events = data.get("events", [])
+        events = (
+            [UnifiedAuditEvent.from_dict(e) for e in raw_events]
+            if isinstance(raw_events, list)
+            else []
+        )
+        return cls(
+            events=events,
+            limit=data.get("limit"),
+            api_key_id=data.get("api_key_id"),
+        )
+
+
+@dataclass(frozen=True)
 class DeliveryListResult:
     deliveries: Optional[List[WebhookDelivery]] = None
     total: Optional[int] = None
