@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-
-import requests
+from typing import Any
 
 from ._client import DEFAULT_BASE_URL
 from ._client import AsyncSaperlyClient as _AsyncHttpClient
@@ -31,7 +29,6 @@ from ._errors import (
     SaperlyError,
     ValidationError,
 )
-from ._transforms import to_snake_keys
 from ._types import (
     AddFundsResult,
     ApiKey,
@@ -111,34 +108,6 @@ class SaperlyClient:
         self.voices = VoicesResource(self._http)
         self.keys = KeysResource(self._http)
 
-    @staticmethod
-    def register(
-        *,
-        email: str,
-        password: str,
-        name: Optional[str] = None,
-        base_url: str = DEFAULT_BASE_URL,
-    ) -> Dict[str, Any]:
-        """Programmatic signup. Creates account + default test API key."""
-        url = f"{base_url}/api/v1/auth/signup"
-        body: Dict[str, Any] = {"email": email, "password": password}
-        if name is not None:
-            body["name"] = name
-        resp = requests.post(
-            url,
-            json=body,
-            headers={"Content-Type": "application/json"},
-            timeout=30.0,
-        )
-        if resp.status_code >= 400:
-            try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            raise SaperlyError.from_response(resp.status_code, error_body)
-        data: object = resp.json()
-        return to_snake_keys(data)  # type: ignore[return-value]
-
     def close(self) -> None:
         self._http.close()
 
@@ -173,36 +142,6 @@ class AsyncSaperlyClient:
         self.settings = AsyncSettingsResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
         self.keys = AsyncKeysResource(self._http)
-
-    @staticmethod
-    async def register(
-        *,
-        email: str,
-        password: str,
-        name: Optional[str] = None,
-        base_url: str = DEFAULT_BASE_URL,
-    ) -> Dict[str, Any]:
-        """Programmatic signup. Creates account + default test API key."""
-        import httpx
-
-        url = f"{base_url}/api/v1/auth/signup"
-        body: Dict[str, Any] = {"email": email, "password": password}
-        if name is not None:
-            body["name"] = name
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                url,
-                json=body,
-                headers={"Content-Type": "application/json"},
-            )
-        if resp.status_code >= 400:
-            try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            raise SaperlyError.from_response(resp.status_code, error_body)
-        data: object = resp.json()
-        return to_snake_keys(data)  # type: ignore[return-value]
 
     async def aclose(self) -> None:
         await self._http.aclose()
