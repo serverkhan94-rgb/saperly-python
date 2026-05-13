@@ -70,6 +70,9 @@ class SaperlyError(Exception):
                 message, status, details
             ),
             "m3_fraud_block": lambda: M3FraudBlockError(message, status),
+            "idempotency_key_reused": lambda: IdempotencyKeyReusedError(message, status),
+            "idempotency_in_progress": lambda: IdempotencyInProgressError(message, status),
+            "missing_idempotency_key": lambda: MissingIdempotencyKeyError(message, status),
         }
 
         factory = _MAP.get(code)
@@ -216,3 +219,34 @@ class M3FraudBlockError(SaperlyError):
 
     def __init__(self, message: str, status: int = 403) -> None:
         super().__init__("m3_fraud_block", status, message)
+
+
+class IdempotencyKeyReusedError(SaperlyError):
+    """Idempotency-Key reused with a different request body within 24h.
+
+    Recovery: use a NEW Idempotency-Key for the new request body.
+    """
+
+    def __init__(self, message: str, status: int = 409) -> None:
+        super().__init__("idempotency_key_reused", status, message)
+
+
+class IdempotencyInProgressError(SaperlyError):
+    """A request with this Idempotency-Key is still in progress.
+
+    Retry after the server-supplied Retry-After window (default 1s).
+    """
+
+    def __init__(self, message: str, status: int = 409) -> None:
+        super().__init__("idempotency_in_progress", status, message)
+
+
+class MissingIdempotencyKeyError(SaperlyError):
+    """A POST that requires an Idempotency-Key header was sent without one.
+
+    The SDK auto-generates UUID v4 keys for /v1/keys mints and rotates, so
+    this only surfaces if a caller bypasses the SDK helpers.
+    """
+
+    def __init__(self, message: str, status: int = 400) -> None:
+        super().__init__("missing_idempotency_key", status, message)

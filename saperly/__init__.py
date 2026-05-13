@@ -19,8 +19,11 @@ from ._errors import (
     EmailTakenError,
     ErrorDetail,
     ForbiddenError,
+    IdempotencyInProgressError,
+    IdempotencyKeyReusedError,
     InsufficientCreditsError,
     M3FraudBlockError,
+    MissingIdempotencyKeyError,
     NotFoundError,
     NumberOptedOutError,
     PaymentMethodRequiredError,
@@ -31,6 +34,8 @@ from ._errors import (
 from ._transforms import to_snake_keys
 from ._types import (
     AddFundsResult,
+    ApiKey,
+    ApiKeyListResult,
     AuditResult,
     Balance,
     Call,
@@ -42,6 +47,7 @@ from ._types import (
     ConversationListResult,
     ConversationMessage,
     ConversationMessagesResult,
+    CreateApiKeyResponse,
     DailyUsage,
     DailyUsageResult,
     DeliveryListResult,
@@ -70,6 +76,7 @@ from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.consent import AsyncConsentResource, ConsentResource
 from .resources.conversations import AsyncConversationsResource, ConversationsResource
 from .resources.disclosures import AsyncDisclosuresResource, DisclosuresResource
+from .resources.keys import AsyncKeysResource, KeysResource
 from .resources.lines import AsyncLinesResource, LinesResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.settings import AsyncSettingsResource, SettingsResource
@@ -102,6 +109,7 @@ class SaperlyClient:
         self.usage = UsageResource(self._http)
         self.settings = SettingsResource(self._http)
         self.voices = VoicesResource(self._http)
+        self.keys = KeysResource(self._http)
 
     @staticmethod
     def register(
@@ -164,6 +172,7 @@ class AsyncSaperlyClient:
         self.usage = AsyncUsageResource(self._http)
         self.settings = AsyncSettingsResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
+        self.keys = AsyncKeysResource(self._http)
 
     @staticmethod
     async def register(
@@ -245,6 +254,9 @@ __all__ = [
     "Settings",
     "Voice",
     "VoiceListResult",
+    "ApiKey",
+    "ApiKeyListResult",
+    "CreateApiKeyResponse",
     # Errors
     "SaperlyError",
     "ErrorDetail",
@@ -265,6 +277,9 @@ __all__ = [
     "AgentCapExceededError",
     "AgentPermissionDeniedError",
     "M3FraudBlockError",
+    "IdempotencyKeyReusedError",
+    "IdempotencyInProgressError",
+    "MissingIdempotencyKeyError",
     # Webhook verification
     "verify_webhook",
     "VerifyResult",

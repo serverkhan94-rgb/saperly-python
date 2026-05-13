@@ -40,6 +40,46 @@ class TestAsyncClient:
             AsyncSaperlyClient(api_key="", base_url=BASE_URL)
 
     @respx.mock
+    async def test_forwards_custom_headers_drops_auth_override(self):
+        route = respx.get(f"{BASE_URL}/api/v1/foo").mock(
+            return_value=httpx.Response(200, json={"ok": True}),
+        )
+        client = AsyncSaperlyClient(api_key="sk_test_xyz", base_url=BASE_URL)
+        await client._http.request(
+            "GET",
+            "/foo",
+            headers={"X-Custom": "yes", "Authorization": "Bearer EVIL"},
+        )
+
+        assert route.called
+        request = route.calls[0].request
+        assert request.headers["X-Custom"] == "yes"
+        assert request.headers["Authorization"] == "Bearer sk_test_xyz"
+        await client.aclose()
+
+    async def test_rejects_crlf_in_caller_header(self):
+        """Defense-in-depth: header injection guard on async path.
+
+        /review hardening (2026-05-12). Parity with sync client.
+        """
+        client = AsyncSaperlyClient(api_key="sk_test_xyz", base_url=BASE_URL)
+        try:
+            with pytest.raises(ValueError, match="CRLF"):
+                await client._http.request(
+                    "GET",
+                    "/foo",
+                    headers={"X-Inj": "a\r\nAuthorization: Bearer evil"},
+                )
+            with pytest.raises(ValueError, match="CRLF"):
+                await client._http.request(
+                    "GET",
+                    "/foo",
+                    headers={"X-Inj\nEvil": "ok"},
+                )
+        finally:
+            await client.aclose()
+
+    @respx.mock
     async def test_204_returns_none(self):
         respx.delete(f"{BASE_URL}/api/v1/some-resource").mock(
             return_value=httpx.Response(204),

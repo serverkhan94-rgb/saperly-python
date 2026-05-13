@@ -504,3 +504,67 @@ class DeliveryListResult:
             [WebhookDelivery.from_dict(d) for d in raw] if isinstance(raw, list) else []
         )
         return cls(deliveries=deliveries, total=data.get("total"))
+
+
+# ---------------------------------------------------------------------------
+# API Keys (child keys minted by a service key)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ApiKey:
+    id: Optional[str] = None
+    key_prefix: Optional[str] = None
+    environment: Optional[str] = None
+    name: Optional[str] = None
+    agent_label: Optional[str] = None
+    line_id: Optional[str] = None
+    permissions: Optional[str] = None
+    monthly_cap_cents: Optional[int] = None
+    monthly_spend_cents: Optional[int] = None
+    created_at: Optional[str] = None
+    revoked_at: Optional[str] = None
+    last_used_at: Optional[str] = None
+    rotated_from: Optional[str] = None
+    created_by_service_key_id: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ApiKey:
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class CreateApiKeyResponse:
+    """Response from .keys.create() and .keys.rotate(). plaintext_key returned ONCE."""
+
+    id: Optional[str] = None
+    plaintext_key: Optional[str] = None
+    key_prefix: Optional[str] = None
+    environment: Optional[str] = None
+    name: Optional[str] = None
+    agent_label: Optional[str] = None
+    line_id: Optional[str] = None
+    permissions: Optional[str] = None
+    monthly_cap_cents: Optional[int] = None
+    monthly_spend_cents: Optional[int] = None
+    created_at: Optional[str] = None
+    revoked_at: Optional[str] = None
+    last_used_at: Optional[str] = None
+    rotated_from: Optional[str] = None
+    created_by_service_key_id: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> CreateApiKeyResponse:
+        return cls(**_pick(data, cls))
+
+
+@dataclass(frozen=True)
+class ApiKeyListResult:
+    keys: Optional[List[ApiKey]] = None
+    total: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> ApiKeyListResult:
+        raw = data.get("keys", [])
+        items = [ApiKey.from_dict(k) for k in raw] if isinstance(raw, list) else []
+        return cls(keys=items, total=data.get("total"))
