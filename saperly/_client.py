@@ -61,9 +61,22 @@ class SaperlyClient:
         *,
         body: Optional[Dict[str, Any]] = None,
         query: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> Any:
         url = _build_url(self._base_url, path, query)
-        headers = _build_headers(self._api_key)
+        merged_headers = _build_headers(self._api_key)
+        if headers:
+            for k, v in headers.items():
+                if k.lower() in ("authorization", "content-type"):
+                    continue
+                # Defense-in-depth: requests/httpx reject CRLF, but a named
+                # error here beats a generic transport-layer failure when the
+                # caller composes headers from untrusted input.
+                if "\r" in k or "\n" in k or "\r" in v or "\n" in v:
+                    raise ValueError(
+                        f"invalid header: CRLF not allowed ({k})"
+                    )
+                merged_headers[k] = v
 
         is_retryable = method.upper() in _RETRYABLE_METHODS
         max_attempts = 2 if is_retryable else 1
@@ -74,7 +87,7 @@ class SaperlyClient:
                 resp = self._session.request(
                     method,
                     url,
-                    headers=headers,
+                    headers=merged_headers,
                     json=body,
                     timeout=self._timeout,
                 )
@@ -147,11 +160,24 @@ class AsyncSaperlyClient:
         *,
         body: Optional[Dict[str, Any]] = None,
         query: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> Any:
         import httpx
 
         url = _build_url(self._base_url, path, query)
-        headers = _build_headers(self._api_key)
+        merged_headers = _build_headers(self._api_key)
+        if headers:
+            for k, v in headers.items():
+                if k.lower() in ("authorization", "content-type"):
+                    continue
+                # Defense-in-depth: requests/httpx reject CRLF, but a named
+                # error here beats a generic transport-layer failure when the
+                # caller composes headers from untrusted input.
+                if "\r" in k or "\n" in k or "\r" in v or "\n" in v:
+                    raise ValueError(
+                        f"invalid header: CRLF not allowed ({k})"
+                    )
+                merged_headers[k] = v
 
         is_retryable = method.upper() in _RETRYABLE_METHODS
         max_attempts = 2 if is_retryable else 1
@@ -162,7 +188,7 @@ class AsyncSaperlyClient:
                 resp = await self._client.request(
                     method,
                     url,
-                    headers=headers,
+                    headers=merged_headers,
                     json=body,
                 )
 

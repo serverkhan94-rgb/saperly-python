@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
-
 import pytest
 import responses
 
-from saperly import EmailTakenError, SaperlyClient, SaperlyError, ValidationError
+from saperly import SaperlyClient, SaperlyError
 from tests.conftest import BASE_URL, SAMPLE_LINE, SAMPLE_STATS_RAW
 
 
@@ -69,6 +67,45 @@ class TestSyncClient:
             assert exc_info.value.code == "unknown"
             assert exc_info.value.status == 500
 
+    @responses.activate
+    def test_forwards_custom_headers_drops_auth_override(self):
+        responses.get(
+            f"{BASE_URL}/api/v1/foo",
+            json={"ok": True},
+            status=200,
+        )
+        client = SaperlyClient(api_key="sk_test_xyz", base_url=BASE_URL)
+        client._http.request(
+            "GET",
+            "/foo",
+            headers={"X-Custom": "yes", "Authorization": "Bearer EVIL"},
+        )
+
+        assert responses.calls[0].request.headers["X-Custom"] == "yes"
+        assert responses.calls[0].request.headers["Authorization"] == "Bearer sk_test_xyz"
+
+    def test_rejects_crlf_in_caller_header(self):
+        """Defense-in-depth: header injection guard.
+
+        /review hardening (2026-05-12). Underlying requests rejects CRLF too,
+        but the SDK raises a named ValueError before the transport sees it.
+        """
+        import pytest
+
+        client = SaperlyClient(api_key="sk_test_xyz", base_url=BASE_URL)
+        with pytest.raises(ValueError, match="CRLF"):
+            client._http.request(
+                "GET",
+                "/foo",
+                headers={"X-Inj": "a\r\nAuthorization: Bearer evil"},
+            )
+        with pytest.raises(ValueError, match="CRLF"):
+            client._http.request(
+                "GET",
+                "/foo",
+                headers={"X-Inj\nEvil": "ok"},
+            )
+
     def test_response_transform(self):
         """Verify camelCase keys in response get converted to snake_case."""
         with responses.RequestsMock() as rsps:
@@ -88,58 +125,3 @@ class TestSyncClient:
             assert stats.by_hour[0]["hour"] == "2026-01-01T00:00:00Z"
 
 
-class TestRegister:
-    @responses.activate
-    def test_register_success(self):
-        responses.post(
-            f"{BASE_URL}/api/v1/auth/signup",
-            json={
-                "user": {
-                    "id": "uuid-123",
-                    "email": "test@example.com",
-                    "name": None,
-                    "created_at": "2026-01-01T00:00:00Z",
-                },
-            },
-            status=201,
-        )
-        result = SaperlyClient.register(
-            email="test@example.com",
-            password="securepass123",
-            base_url=BASE_URL,
-        )
-
-        assert result["user"]["id"] == "uuid-123"
-        assert result["user"]["email"] == "test@example.com"
-
-        body = json.loads(responses.calls[0].request.body)
-        assert body["email"] == "test@example.com"
-        assert body["password"] == "securepass123"
-
-    @responses.activate
-    def test_register_email_taken(self):
-        responses.post(
-            f"{BASE_URL}/api/v1/auth/signup",
-            json={"error": {"code": "email_taken", "message": "Email already registered"}},
-            status=409,
-        )
-        with pytest.raises(EmailTakenError):
-            SaperlyClient.register(
-                email="taken@example.com",
-                password="securepass123",
-                base_url=BASE_URL,
-            )
-
-    @responses.activate
-    def test_register_validation_error(self):
-        responses.post(
-            f"{BASE_URL}/api/v1/auth/signup",
-            json={"error": {"code": "validation_error", "message": "Password too short"}},
-            status=422,
-        )
-        with pytest.raises(ValidationError):
-            SaperlyClient.register(
-                email="test@example.com",
-                password="short",
-                base_url=BASE_URL,
-            )

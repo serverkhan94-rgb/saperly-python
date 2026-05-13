@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-
-import requests
+from typing import Any
 
 from ._client import DEFAULT_BASE_URL
 from ._client import AsyncSaperlyClient as _AsyncHttpClient
 from ._client import SaperlyClient as _SyncHttpClient
 from ._errors import (
+    AgentCapExceededError,
+    AgentPermissionDeniedError,
+    AgentScopeError,
     AuthenticationError,
     CallInProgressError,
     CallNotActiveError,
@@ -16,7 +17,11 @@ from ._errors import (
     EmailTakenError,
     ErrorDetail,
     ForbiddenError,
+    IdempotencyInProgressError,
+    IdempotencyKeyReusedError,
     InsufficientCreditsError,
+    M3FraudBlockError,
+    MissingIdempotencyKeyError,
     NotFoundError,
     NumberOptedOutError,
     PaymentMethodRequiredError,
@@ -24,9 +29,10 @@ from ._errors import (
     SaperlyError,
     ValidationError,
 )
-from ._transforms import to_snake_keys
 from ._types import (
     AddFundsResult,
+    ApiKey,
+    ApiKeyListResult,
     AuditResult,
     Balance,
     Call,
@@ -38,6 +44,7 @@ from ._types import (
     ConversationListResult,
     ConversationMessage,
     ConversationMessagesResult,
+    CreateApiKeyResponse,
     DailyUsage,
     DailyUsageResult,
     DeliveryListResult,
@@ -50,6 +57,8 @@ from ._types import (
     SmsMessage,
     Transaction,
     TransactionListResult,
+    UnifiedAuditEvent,
+    UnifiedAuditResult,
     Voice,
     VoiceListResult,
     WebhookDelivery,
@@ -57,12 +66,14 @@ from ._types import (
     WebhookTestResult,
 )
 from ._version import __version__
+from .resources.audit import AsyncAuditResource, AuditResource
 from .resources.billing import AsyncBillingResource, BillingResource
 from .resources.calls import AsyncCallsResource, CallsResource
 from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.consent import AsyncConsentResource, ConsentResource
 from .resources.conversations import AsyncConversationsResource, ConversationsResource
 from .resources.disclosures import AsyncDisclosuresResource, DisclosuresResource
+from .resources.keys import AsyncKeysResource, KeysResource
 from .resources.lines import AsyncLinesResource, LinesResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.settings import AsyncSettingsResource, SettingsResource
@@ -86,6 +97,7 @@ class SaperlyClient:
         self.calls = CallsResource(self._http)
         self.consent = ConsentResource(self._http)
         self.compliance = ComplianceResource(self._http)
+        self.audit = AuditResource(self._http)
         self.disclosures = DisclosuresResource(self._http)
         self.billing = BillingResource(self._http)
         self.webhooks = WebhooksResource(self._http)
@@ -94,34 +106,7 @@ class SaperlyClient:
         self.usage = UsageResource(self._http)
         self.settings = SettingsResource(self._http)
         self.voices = VoicesResource(self._http)
-
-    @staticmethod
-    def register(
-        *,
-        email: str,
-        password: str,
-        name: Optional[str] = None,
-        base_url: str = DEFAULT_BASE_URL,
-    ) -> Dict[str, Any]:
-        """Programmatic signup. Creates account + default test API key."""
-        url = f"{base_url}/api/v1/auth/signup"
-        body: Dict[str, Any] = {"email": email, "password": password}
-        if name is not None:
-            body["name"] = name
-        resp = requests.post(
-            url,
-            json=body,
-            headers={"Content-Type": "application/json"},
-            timeout=30.0,
-        )
-        if resp.status_code >= 400:
-            try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            raise SaperlyError.from_response(resp.status_code, error_body)
-        data: object = resp.json()
-        return to_snake_keys(data)  # type: ignore[return-value]
+        self.keys = KeysResource(self._http)
 
     def close(self) -> None:
         self._http.close()
@@ -147,6 +132,7 @@ class AsyncSaperlyClient:
         self.calls = AsyncCallsResource(self._http)
         self.consent = AsyncConsentResource(self._http)
         self.compliance = AsyncComplianceResource(self._http)
+        self.audit = AsyncAuditResource(self._http)
         self.disclosures = AsyncDisclosuresResource(self._http)
         self.billing = AsyncBillingResource(self._http)
         self.webhooks = AsyncWebhooksResource(self._http)
@@ -155,36 +141,7 @@ class AsyncSaperlyClient:
         self.usage = AsyncUsageResource(self._http)
         self.settings = AsyncSettingsResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
-
-    @staticmethod
-    async def register(
-        *,
-        email: str,
-        password: str,
-        name: Optional[str] = None,
-        base_url: str = DEFAULT_BASE_URL,
-    ) -> Dict[str, Any]:
-        """Programmatic signup. Creates account + default test API key."""
-        import httpx
-
-        url = f"{base_url}/api/v1/auth/signup"
-        body: Dict[str, Any] = {"email": email, "password": password}
-        if name is not None:
-            body["name"] = name
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                url,
-                json=body,
-                headers={"Content-Type": "application/json"},
-            )
-        if resp.status_code >= 400:
-            try:
-                error_body = resp.json()
-            except ValueError:
-                error_body = None
-            raise SaperlyError.from_response(resp.status_code, error_body)
-        data: object = resp.json()
-        return to_snake_keys(data)  # type: ignore[return-value]
+        self.keys = AsyncKeysResource(self._http)
 
     async def aclose(self) -> None:
         await self._http.aclose()
@@ -216,6 +173,10 @@ __all__ = [
     "WebhookTestResult",
     "CallListResult",
     "AuditResult",
+    "UnifiedAuditEvent",
+    "UnifiedAuditResult",
+    "AuditResource",
+    "AsyncAuditResource",
     "DeliveryListResult",
     "Transaction",
     "TransactionListResult",
@@ -232,6 +193,9 @@ __all__ = [
     "Settings",
     "Voice",
     "VoiceListResult",
+    "ApiKey",
+    "ApiKeyListResult",
+    "CreateApiKeyResponse",
     # Errors
     "SaperlyError",
     "ErrorDetail",
@@ -248,6 +212,13 @@ __all__ = [
     "NumberOptedOutError",
     "EmailTakenError",
     "RateLimitedError",
+    "AgentScopeError",
+    "AgentCapExceededError",
+    "AgentPermissionDeniedError",
+    "M3FraudBlockError",
+    "IdempotencyKeyReusedError",
+    "IdempotencyInProgressError",
+    "MissingIdempotencyKeyError",
     # Webhook verification
     "verify_webhook",
     "VerifyResult",
