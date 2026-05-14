@@ -97,7 +97,7 @@ svc = SaperlyClient(api_key=os.environ["SAPERLY_SERVICE_KEY"])
 
 child = svc.keys.create(
     name="voice-agent-prod",
-    line_id="line_xyz",
+    line_id="550e8400-e29b-41d4-a716-446655440000",
     permissions="call_only",
     monthly_cap_cents=500,
 )
