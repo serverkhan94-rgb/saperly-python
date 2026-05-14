@@ -22,6 +22,13 @@ dev = [
   "ruff>=0.4",
 ]
 
+[project.urls]
+Homepage = "https://saperly.com"
+Repository = "https://github.com/Saperly/saperly-python"
+Documentation = "https://docs.saperly.com"
+Issues = "https://github.com/Saperly/saperly-python/issues"
+Changelog = "https://docs.saperly.com/changelog/2026-05-13-agent-native-key-management"
+
 [tool.ruff]
 target-version = "py39"
 line-length = 100
